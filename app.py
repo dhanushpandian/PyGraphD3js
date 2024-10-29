@@ -49,9 +49,6 @@ def get_graph_data():
     
     return {"nodes": nodes, "relationships": relationships}
 
-@app.route('/')
-def index():
-    return render_template('index.html')
 
 @app.route('/api/graph')
 def get_graph():
@@ -60,6 +57,19 @@ def get_graph():
         return jsonify(graph_data)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
+    
+
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/all')
+def all():
+    return render_template('all.html')
+
+
+
 
 if __name__ == '__main__':
     app.run(port=5001,debug=True)
