@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ollama Chat</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        .loading-dots::after {
+            content: '...';
+            animation: loading 1.5s infinite;
+        }
+        @keyframes loading {
+            0%, 20% { content: '.'; }
+            33%, 53% { content: '..'; }
+            66%, 86% { content: '...'; }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 flex flex-col min-h-screen">
+
+    <!-- Top Bar with Home Button -->
+    <div class="bg-blue-600 p-4 flex justify-between items-center shadow-md">
+        <a href="/" class="text-white font-semibold text-lg">Home</a>
+        <h1 class="text-white font-bold text-xl">G-RAG Interface</h1>
+        <div class="w-16"></div> <!-- Empty div to align the home button to the left -->
+    </div>
+
+    <!-- Main Chat Container -->
+    <div class="container mx-auto max-w-2xl px-4 py-8 flex-grow">
+        <div class="bg-white shadow-lg rounded-lg overflow-hidden flex flex-col h-[80vh]">
+
+            <!-- Chat Box Area -->
+            <div id="chatbox" class="flex-grow overflow-y-auto p-4 space-y-4">
+                <div class="text-center text-gray-500 italic">
+                    Query from the Graph with the AI
+                </div>
+            </div>
+
+            <!-- Input and Send Button -->
+            <div class="border-t p-4 flex items-center">
+                <input 
+                    type="text" 
+                    id="userInput" 
+                    placeholder="Type your message..." 
+                    class="flex-grow px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                <button 
+                    id="sendButton" 
+                    class="bg-blue-600 text-white px-4 py-2 rounded-r-md hover:bg-blue-700 transition duration-300"
+                >
+                    Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script for handling chat interactions -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function(){
+            $("#sendButton").click(function(){
+                var userMessage = $("#userInput").val().trim();
+                
+                if (!userMessage) return;
+
+                // Disable send button and input during request
+                $("#sendButton").prop('disabled', true);
+                $("#userInput").prop('disabled', true);
+
+                // Add user message
+                $("#chatbox").append(`
+                    <div class="text-right">
+                        <div class="inline-block bg-blue-100 text-blue-800 rounded-lg px-4 py-2 max-w-[80%]">
+                            ${userMessage}
+                        </div>
+                    </div>
+                `);
+
+                // Add loading indicator
+                var loadingIndicator = $(`
+                    <div class="text-left">
+                        <div class="inline-block bg-gray-100 text-gray-800 rounded-lg px-4 py-2 max-w-[80%]">
+                            <span class="loading-dots">Thinking</span>
+                        </div>
+                    </div>
+                `).appendTo("#chatbox");
+
+                // Scroll to bottom
+                $("#chatbox").scrollTop($("#chatbox")[0].scrollHeight);
+
+                $.ajax({
+                    type: "POST",
+                    url: "/chat",
+                    data: JSON.stringify({message: userMessage}),
+                    contentType: "application/json",
+                    success: function(data){
+                        // Remove loading indicator
+                        loadingIndicator.remove();
+
+                        // Add AI response
+                        $("#chatbox").append(`
+                            <div class="text-left">
+                                <div class="inline-block bg-gray-100 text-gray-800 rounded-lg px-4 py-2 max-w-[80%]">
+                                    ${data.response}
+                                </div>
+                            </div>
+                        `);
+
+                        // Scroll to bottom
+                        $("#chatbox").scrollTop($("#chatbox")[0].scrollHeight);
+
+                        // Clear input
+                        $("#userInput").val("");
+                    },
+                    error: function(error){
+                        // Remove loading indicator
+                        loadingIndicator.remove();
+
+                        // Add error message
+                        $("#chatbox").append(`
+                            <div class="text-left">
+                                <div class="inline-block bg-red-100 text-red-800 rounded-lg px-4 py-2 max-w-[80%]">
+                                    Error: Could not send message. Please try again.
+                                </div>
+                            </div>
+                        `);
+
+                        console.error(error);
+                    },
+                    complete: function() {
+                        // Re-enable send button and input
+                        $("#sendButton").prop('disabled', false);
+                        $("#userInput").prop('disabled', false).focus();
+                    }
+                });
+            });
+
+            // Allow sending message with Enter key
+            $("#userInput").keypress(function(e){
+                if (e.which == 13) {  // Enter key
+                    $("#sendButton").click();
+                }
+            });
+        });
+    </script>
+</body>
+</html>
