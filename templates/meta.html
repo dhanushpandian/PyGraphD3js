@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schema Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+        }
+
+        #graph-container {
+            width: 100vw;
+            height: 60vh;
+            background-color: white;
+        }
+
+        #data-display {
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #ccc;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+
+        table th, table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #f4f4f4;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+        }
+        
+        .nav-links {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 20;
+        }
+
+        .nav-links a {
+            margin-right: 10px;
+            text-decoration: none;
+            color: #333;
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+        #header {
+            background-color: #f0f0f0;
+            padding: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+    <div id="header">
+        Graph-RAG and D3.js Visualization for Insilico Bio-Med Data Analysis
+    </div>
+     <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/all">All</a>
+        <a href="/chat">Graph RAG</a>
+        <a href="/schema">Details</a>
+    </div>
+</head>
+<body>
+    <div id="graph-container"></div>
+    <div class="tooltip"></div>
+    <div id="data-display">
+        <h3>Schema Data</h3>
+        <h4>Nodes:</h4>
+        <table id="nodes-table"></table>
+        <h4>Relationships:</h4>
+        <table id="relationships-table"></table>
+    </div>
+
+    <script>
+        const width = document.getElementById('graph-container').clientWidth;
+        const height = document.getElementById('graph-container').clientHeight;
+
+        const svg = d3.select('#graph-container')
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height);
+
+        const g = svg.append('g');
+
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on('zoom', (event) => g.attr('transform', event.transform));
+
+        svg.call(zoom);
+
+        const tooltip = d3.select('.tooltip');
+
+        // Sample response data
+        const response = {
+            nodes: [
+                { id: "-1", labels: ["Autism"], properties: { name: "Autism", indexes: [], constraints: [] } },
+                { id: "-2", labels: ["Disease"], properties: { name: "Disease", indexes: [], constraints: [] } },
+                { id: "-3", labels: ["Protein"], properties: { name: "Protein", indexes: [], constraints: [] } }
+            ],
+            relationships: [
+                { source: "-2", target: "-3", type: "RELATED_TO", properties: { name: "RELATED_TO" } },
+                { source: "-2", target: "-1", type: "type", properties: { name: "type" } }
+            ]
+        };
+
+        // Populate tables
+        const nodesTable = document.getElementById('nodes-table');
+        nodesTable.innerHTML = `
+            <tr>
+                <th>ID</th>
+                <th>Labels</th>
+                <th>Properties</th>
+            </tr>
+            ${response.nodes.map(node => `
+                <tr>
+                    <td>${node.id}</td>
+                    <td>${node.labels.join(', ')}</td>
+                    <td>${JSON.stringify(node.properties)}</td>
+                </tr>
+            `).join('')}
+        `;
+
+        const relationshipsTable = document.getElementById('relationships-table');
+        relationshipsTable.innerHTML = `
+            <tr>
+                <th>Source</th>
+                <th>Target</th>
+                <th>Type</th>
+                <th>Properties</th>
+            </tr>
+            ${response.relationships.map(rel => `
+                <tr>
+                    <td>${rel.source}</td>
+                    <td>${rel.target}</td>
+                    <td>${rel.type}</td>
+                    <td>${JSON.stringify(rel.properties)}</td>
+                </tr>
+            `).join('')}
+        `;
+
+        // Create links
+        const links = g.selectAll('.link')
+            .data(response.relationships)
+            .enter()
+            .append('line')
+            .attr('class', 'link')
+            .attr('stroke', '#cbd5e0')
+            .attr('stroke-opacity', 0.6)
+            .attr('stroke-width', 1.5);
+
+        // Create nodes
+        const nodes = g.selectAll('.node')
+            .data(response.nodes)
+            .enter()
+            .append('circle')
+            .attr('class', 'node')
+            .attr('r', 15)
+            .attr('fill', '#7fbf7f')
+            .on('mouseover', (event, d) => {
+                tooltip.style('display', 'block')
+                    .html(`
+                        <strong>${d.labels.join(', ')}</strong><br>
+                        ${Object.entries(d.properties)
+                            .map(([key, value]) => `${key}: ${value}`)
+                            .join('<br>')}
+                    `);
+            })
+            .on('mousemove', (event) => {
+                tooltip.style('left', (event.pageX + 10) + 'px')
+                       .style('top', (event.pageY - 10) + 'px');
+            })
+            .on('mouseout', () => tooltip.style('display', 'none'));
+
+        // Add labels
+        const labels = g.selectAll('.node-label')
+            .data(response.nodes)
+            .enter()
+            .append('text')
+            .attr('class', 'node-label')
+            .text(d => d.properties.name || d.labels[0])
+            .attr('dx', 20)
+            .attr('dy', 4);
+
+        // Force simulation
+        const simulation = d3.forceSimulation()
+            .force('link', d3.forceLink().id(d => d.id).distance(100))
+            .force('charge', d3.forceManyBody().strength(-300))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collision', d3.forceCollide().radius(30));
+
+        simulation
+            .nodes(response.nodes)
+            .on('tick', () => {
+                links
+                    .attr('x1', d => d.source.x)
+                    .attr('y1', d => d.source.y)
+                    .attr('x2', d => d.target.x)
+                    .attr('y2', d => d.target.y);
+
+                nodes
+                    .attr('cx', d => d.x)
+                    .attr('cy', d => d.y);
+
+                labels
+                    .attr('x', d => d.x)
+                    .attr('y', d => d.y);
+            });
+
+        simulation.force('link')
+            .links(response.relationships);
+    </script>
+</body>
+</html>

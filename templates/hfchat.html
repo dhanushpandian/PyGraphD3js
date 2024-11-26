@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ollama Chat</title>
+    <title>Groq Chat</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
         .loading-dots::after {
@@ -15,46 +15,15 @@
             33%, 53% { content: '..'; }
             66%, 86% { content: '...'; }
         }
-        
-        .nav-links {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            z-index: 20;
-        }
-
-        .nav-links a {
-            margin-right: 10px;
-            text-decoration: none;
-            color: #333;
-            background-color: #f0f0f0;
-            padding: 5px 10px;
-            border-radius: 5px;
-        }
-        #header {
-            background-color: #f0f0f0;
-            padding: 10px;
-            text-align: center;
-            font-size: 18px;
-            font-weight: bold;
-        }
     </style>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
 
     <!-- Top Bar with Home Button -->
-    <div id="header">
-        Graph-RAG and D3.js Visualization for Insilico Bio-Med Data Analysis
-    </div>
-    <div class="nav-links">
-        <a href="/">Home</a>
-        <a href="/all">All</a>
-        <a href="/chat">Graph RAG</a>
-        <a href="/schema">Details</a>
-    </div>
-    <div class="bg-blue-600 p-4 flex justify-between items-center shadow-md">
-        <h1 class="text-white font-bold text-xl">G-RAG Interface ollama Offline</h1>
-        <div class="w-16"></div> <!-- Empty div to align the home button to the left -->
+    <div class="bg-green-600 p-4 flex justify-between items-center shadow-md">
+        <!-- <a href="/" class="text-white font-semibold text-lg">Home</a> -->
+        <h1 class="text-white font-bold text-xl">Groq Chat Interface</h1>
+        <div class="w-16"></div>
     </div>
 
     <!-- Main Chat Container -->
@@ -64,7 +33,7 @@
             <!-- Chat Box Area -->
             <div id="chatbox" class="flex-grow overflow-y-auto p-4 space-y-4">
                 <div class="text-center text-gray-500 italic">
-                    Query from the Graph with the llama 3.1:8b
+                    Chat with the Groq API
                 </div>
             </div>
 
@@ -73,7 +42,7 @@
                 <input 
                     type="text" 
                     id="userInput" 
-                    placeholder="Type your message..." 
+                    placeholder="Type your question for Groq..." 
                     class="flex-grow px-3 py-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                 <button 
@@ -109,20 +78,18 @@
                 `);
 
                 // Add loading indicator
-                var loadingIndicator = $(`
-                    <div class="text-left">
-                        <div class="inline-block bg-gray-100 text-gray-800 rounded-lg px-4 py-2 max-w-[80%]">
-                            <span class="loading-dots">Thinking</span>
-                        </div>
+                var loadingIndicator = $(`<div class="text-left">
+                    <div class="inline-block bg-gray-100 text-gray-800 rounded-lg px-4 py-2 max-w-[80%]">
+                        <span class="loading-dots">Thinking</span>
                     </div>
-                `).appendTo("#chatbox");
+                </div>`).appendTo("#chatbox");
 
                 // Scroll to bottom
                 $("#chatbox").scrollTop($("#chatbox")[0].scrollHeight);
 
                 $.ajax({
                     type: "POST",
-                    url: "/chat",
+                    url: "/hfchat",  // Updated URL for the Groq endpoint
                     data: JSON.stringify({message: userMessage}),
                     contentType: "application/json",
                     success: function(data){

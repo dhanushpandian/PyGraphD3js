@@ -1,12 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <a href="/">Home</a>
+    <div id="header">
+        Graph-RAG and D3.js Visualization for Insilico Bio-Med Data Analysis
+    </div>
+    <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/all">All</a>
+        <a href="/chat">Graph RAG</a>
+        <a href="/schema">Details</a>
+    </div>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Neo4j Graph Visualization</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
     <style>
+        #header {
+            background-color: #f0f0f0;
+            padding: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .nav-links {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 20;
+        }
+
+        .nav-links a {
+            margin-right: 10px;
+            text-decoration: none;
+            color: #333;
+            background-color: #f0f0f0;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
         * {
             margin: 0;
             padding: 0;

@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo4j Graph Visualization</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        #graph-container {
+            width: 100vw;
+            height: 100vh;
+            background-color: white;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="graph-container"></div>
+    <div class="tooltip"></div>
+
+    <script>
+        const width = document.getElementById('graph-container').clientWidth;
+        const height = document.getElementById('graph-container').clientHeight;
+
+        const svg = d3.select('#graph-container')
+            .append('svg')
+            .attr('width', width)
+            .attr('height', height);
+
+        const g = svg.append('g');
+
+        // Add zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([0.1, 4])
+            .on('zoom', (event) => {
+                g.attr('transform', event.transform);
+            });
+
+        svg.call(zoom);
+
+        const tooltip = d3.select('.tooltip');
+
+        // Fetch and render graph data
+        fetch('/api/graph')
+            .then(response => response.json())
+            .then(data => {
+                const links = g.selectAll('.link')
+                    .data(data.relationships)
+                    .enter()
+                    .append('line')
+                    .attr('class', 'link')
+                    .attr('stroke', '#cbd5e0')
+                    .attr('stroke-opacity', 0.6)
+                    .attr('stroke-width', 1.5);
+
+                const nodes = g.selectAll('.node')
+                    .data(data.nodes)
+                    .enter()
+                    .append('circle')
+                    .attr('class', 'node')
+                    .attr('r', 15)
+                    .attr('fill', d => {
+                        const label = d.labels[0];
+                        switch (label) {
+                            case 'Disease': return '#ff7f7f';
+                            case 'Protein': return '#7fbf7f';
+                            case 'Autism': return '#7f7fff';
+                            default: return '#999';
+                        }
+                    })
+                    .on('mouseover', (event, d) => {
+                        tooltip.style('display', 'block')
+                            .html(`
+                                <strong>${d.labels.join(', ')}</strong><br>
+                                ${Object.entries(d.properties)
+                                    .map(([key, value]) => `${key}: ${value}`)
+                                    .join('<br>')}
+                            `);
+                    })
+                    .on('mousemove', (event) => {
+                        tooltip.style('left', (event.pageX + 10) + 'px')
+                               .style('top', (event.pageY - 10) + 'px');
+                    })
+                    .on('mouseout', () => {
+                        tooltip.style('display', 'none');
+                    });
+
+                // Add dragging functionality
+                nodes.call(d3.drag()
+                    .on('start', (event, d) => {
+                        if (!event.active) simulation.alphaTarget(0.3).restart();
+                        d.fx = d.x;
+                        d.fy = d.y;
+                    })
+                    .on('drag', (event, d) => {
+                        d.fx = event.x;
+                        d.fy = event.y;
+                    })
+                    .on('end', (event, d) => {
+                        if (!event.active) simulation.alphaTarget(0);
+                        d.fx = null;
+                        d.fy = null;
+                    })
+                );
+
+                // Add node labels
+                const labels = g.selectAll('.node-label')
+                    .data(data.nodes)
+                    .enter()
+                    .append('text')
+                    .attr('class', 'node-label')
+                    .text(d => {
+                        if (d.labels.includes('Protein')) {
+                            return d.properties.id || 'Unknown ID'; // Use the Protein ID
+                        }
+                        return d.properties.name || d.labels[0]; // Default to name or first label
+                    })
+                    .attr('dx', 20)
+                    .attr('dy', 4);
+
+                const simulation = d3.forceSimulation()
+                    .force('link', d3.forceLink().id(d => d.id).distance(100))
+                    .force('charge', d3.forceManyBody().strength(-300))
+                    .force('center', d3.forceCenter(width / 2, height / 2))
+                    .force('collision', d3.forceCollide().radius(30));
+
+                simulation
+                    .nodes(data.nodes)
+                    .on('tick', () => {
+                        links
+                            .attr('x1', d => d.source.x)
+                            .attr('y1', d => d.source.y)
+                            .attr('x2', d => d.target.x)
+                            .attr('y2', d => d.target.y);
+
+                        nodes
+                            .attr('cx', d => d.x)
+                            .attr('cy', d => d.y);
+
+                        labels
+                            .attr('x', d => d.x)
+                            .attr('y', d => d.y);
+                    });
+
+                simulation.force('link')
+                    .links(data.relationships);
+            });
+    </script>
+</body>
+</html>
