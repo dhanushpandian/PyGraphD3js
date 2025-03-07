@@ -9,7 +9,7 @@ from flask_cors import CORS
 import requests
 from dotenv import load_dotenv
 import os
-
+from ai import ai
 load_dotenv()
 
 app = Flask(__name__)
@@ -167,59 +167,85 @@ def get_ollama_response(message):
         return f"Sorry, there was an error processing your message: {str(e)}"
     
 
+# @app.route('/hfchat', methods=['POST'])
+# def hfchat_post():
+#     try:
+#         # Get user input from the request
+#         data = request.get_json()
+#         user_message = data.get('message', '')
+#         user_message = "give me consice answers only from the graph data answering the question " + user_message
+#         if not user_message:
+#             return jsonify({'response': 'No message provided'}), 400
+#         print(f"Received message for Groq: {user_message}")
+#         GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+#         GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+#         headers = {
+#             "Content-Type": "application/json",
+#             "Authorization": f"Bearer {GROQ_API_KEY}"
+#         }
+#         user_message += "this is a graph data, interpret it and answer the questions"
+#         user_message += str(get_graph_data())
+#         payload = {
+#             "model": "llama3-8b-8192",
+#             "messages": [
+#                 {
+#                     "role": "user",
+#                     "content": user_message
+#                 }
+#             ]
+#         }
+#         response = requests.post(GROQ_API_URL, headers=headers, json=payload)
+#         # Check if the request was successful
+#         if response.status_code == 200:
+#             # Parse the response from the Groq API
+#             ai_response = response.json()
+#             chat_response = ai_response.get("choices", [{}])[0].get("message", {}).get("content", "No response from Groq API")
+#             # Return the response to the frontend
+#             return jsonify({'response': chat_response})
+#         else:
+#             # Log and return error if the API request failed
+#             error_message = response.json().get("error", {}).get("message", "Unknown error")
+#             print(f"Groq API Error: {error_message}")
+#             return jsonify({'response': f"Groq API Error: {error_message}"}), response.status_code
+#     except Exception as e:
+#         print(f"Error in hfchat_post: {traceback.format_exc()}")
+#         return jsonify({'response': f"Server Error: {str(e)}"}), 500
+
+# import markdown2
+
+# def convert_markdown_to_html(md_text):
+#     return markdown2.markdown(md_text)
+
+
+
+    
 @app.route('/hfchat', methods=['POST'])
 def hfchat_post():
     try:
+        # Ensure request has the correct content type
+        if not request.is_json:
+            return jsonify({'response': 'Unsupported Media Type. Use application/json'}), 415
+
         # Get user input from the request
         data = request.get_json()
-        user_message = data.get('message', '')
-        if not user_message:
+        if not data or 'message' not in data:
             return jsonify({'response': 'No message provided'}), 400
 
-        print(f"Received message for Groq: {user_message}")
+        user_message = "give me concise answers only from the graph data answering the question " + data['message']
+        print(f"Received message for AI: {user_message}")
 
-        GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-        GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {GROQ_API_KEY}"
-        }
+        # Simulate get_graph_data() function (Ensure you define this in actual implementation)
+        user_message += " this is a graph data, interpret it and answer the questions"
+        user_message += str(get_graph_data())  # Ensure get_graph_data() is defined
 
-        user_message += "this is a graph data, interpret it and answer the questions"
-        user_message += str(get_graph_data())
-
-        payload = {
-            "model": "llama3-8b-8192",
-            "messages": [
-                {
-                    "role": "user",
-                    "content": user_message
-                }
-            ]
-        }
-
-
-        response = requests.post(GROQ_API_URL, headers=headers, json=payload)
-
-        # Check if the request was successful
-        if response.status_code == 200:
-            # Parse the response from the Groq API
-            ai_response = response.json()
-            chat_response = ai_response.get("choices", [{}])[0].get("message", {}).get("content", "No response from Groq API")
-
-            # Return the response to the frontend
-            return jsonify({'response': chat_response})
-        else:
-            # Log and return error if the API request failed
-            error_message = response.json().get("error", {}).get("message", "Unknown error")
-            print(f"Groq API Error: {error_message}")
-            return jsonify({'response': f"Groq API Error: {error_message}"}), response.status_code
+        response = ai(user_message)  # Call AI function
+        # response_text = ai(user_message)  # Get AI response
+        # html_response = convert_markdown_to_html(response_text)
+        return jsonify(response)  # Ensure JSON response
 
     except Exception as e:
         print(f"Error in hfchat_post: {traceback.format_exc()}")
         return jsonify({'response': f"Server Error: {str(e)}"}), 500
-
-    
 
 
 
@@ -247,4 +273,4 @@ def chat_post():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=8080, debug=True)
