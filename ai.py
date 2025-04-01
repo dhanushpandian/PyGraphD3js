@@ -22,7 +22,7 @@ def ai(user_input):
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4o-mini",
             messages=messages,
             temperature=0
         )
@@ -68,9 +68,5 @@ def ai(user_input):
 
 if __name__ == "__main__":
     messages = """Received message for Groq: give me consice answers only from the graph data answering the question what types of protiens are there in the graph about autism?
-Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 3, column: 24, offset: 34} for query: '\n        MATCH (n)\n        RETURN id(n) as id, labels(n) as labels, properties(n) as properties\n        '
-Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 4, column: 9, offset: 81} for query: '\n        MATCH (a)-[r]->(b)\n        RETURN id(r) as id, type(r) as type,\n        id(a) as source, id(b) as target,\n        properties(r) as properties\n        '
-Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 3, column: 24, offset: 43} for query: '\n        MATCH (a)-[r]->(b)\n        RETURN id(r) as id, type(r) as type,\n        id(a) as source, id(b) as target,\n        properties(r) as properties\n        '
-Received notification from DBMS server: {severity: WARNING} {code: Neo.ClientNotification.Statement.FeatureDeprecationWarning} {category: DEPRECATION} {title: This feature is deprecated and will be removed in future versions.} {description: The query used a deprecated function: `id`.} {position: line: 4, column: 26, offset: 98} for query: '\n        MATCH (a)-[r]->(b)\n        RETURN id(r) as id, type(r) as type,\n        id(a) as source, id(b) as target,\n        properties(r) as properties\n '
 '"""
     print("output now:",ai(messages))
